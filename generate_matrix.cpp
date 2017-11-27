@@ -57,6 +57,36 @@ using std::endl;
 #include <cstdio>
 #include <cassert>
 #include "generate_matrix.hpp"
+
+void allocate(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x,
+              double **b, double **xexact, double **r, double **p, double **Ap) {
+  *A = new HPC_Sparse_Matrix; // Allocate matrix struct and fill it
+  (*A)->title = 0;
+
+  int local_nrow = nx * ny * nz;   // This is the size of our subblock
+  assert(local_nrow > 0);          // Must have something to work with
+  int local_nnz = 27 * local_nrow; // Approximately 27 nonzeros per row (except
+                                   // for boundary nodes)
+
+  // Allocate arrays that are of length local_nrow
+  (*A)->nnz_in_row = new int[local_nrow];
+  (*A)->ptr_to_vals_in_row = new double *[local_nrow];
+  (*A)->ptr_to_inds_in_row = new int *[local_nrow];
+  (*A)->ptr_to_diags = new double *[local_nrow];
+
+  *x = new double[local_nrow];
+  *b = new double[local_nrow];
+  *xexact = new double[local_nrow];
+
+  // Allocate arrays that are of length local_nnz
+  (*A)->list_of_vals = new double[local_nnz];
+  (*A)->list_of_inds = new int[local_nnz];
+
+  *r = new double[local_nrow];
+  *p = new double[local_nrow]; // In parallel case, A is rectangular
+  *Ap = new double[local_nrow];
+}
+
 void generate_matrix(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, double **b, double **xexact)
 
 {
@@ -75,10 +105,6 @@ void generate_matrix(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, 
   int rank = 0;
 #endif
 
-  *A = new HPC_Sparse_Matrix; // Allocate matrix struct and fill it
-  (*A)->title = 0;
-
-
   // Set this bool to true if you want a 7-pt stencil instead of a 27 pt stencil
   bool use_7pt_stencil = false;
 
@@ -92,22 +118,6 @@ void generate_matrix(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, 
   int start_row = local_nrow*rank; // Each processor gets a section of a chimney stack domain
   int stop_row = start_row+local_nrow-1;
   
-
-  // Allocate arrays that are of length local_nrow
-  (*A)->nnz_in_row = new int[local_nrow];
-  (*A)->ptr_to_vals_in_row = new double*[local_nrow];
-  (*A)->ptr_to_inds_in_row = new int   *[local_nrow];
-  (*A)->ptr_to_diags       = new double*[local_nrow];
-
-  *x = new double[local_nrow];
-  *b = new double[local_nrow];
-  *xexact = new double[local_nrow];
-
-
-  // Allocate arrays that are of length local_nnz
-  (*A)->list_of_vals = new double[local_nnz];
-  (*A)->list_of_inds = new int   [local_nnz];
-
   double * curvalptr = (*A)->list_of_vals;
   int * curindptr = (*A)->list_of_inds;
 

@@ -69,10 +69,9 @@ using std::endl;
 
 #define TICK()  t0 = mytimer() // Use TICK and TOCK to time a code section
 #define TOCK(t) t += mytimer() - t0
-int HPCCG(HPC_Sparse_Matrix * A,
-	  const double * const b, double * const x,
-	  const int max_iter, const double tolerance, int &niters, double & normr,
-	  double * times)
+int HPCCG(HPC_Sparse_Matrix *A, const double *const b, double *const x,
+          const int max_iter, const double tolerance, int &niters,
+          double &normr, double *r, double *p, double *Ap)
 
 {
   double t_begin = mytimer();  // Start timing right away
@@ -83,10 +82,6 @@ int HPCCG(HPC_Sparse_Matrix * A,
 #endif
   int nrow = A->local_nrow;
   int ncol = A->local_ncol;
-
-  double * r = new double [nrow];
-  double * p = new double [ncol]; // In parallel case, A is rectangular
-  double * Ap = new double [nrow];
 
   normr = 0.0;
   double rtrans = 0.0;
@@ -153,9 +148,6 @@ int HPCCG(HPC_Sparse_Matrix * A,
 #ifdef USING_MPI
   times[5] = t5; // exchange boundary time
 #endif
-  delete [] p;
-  delete [] Ap;
-  delete [] r;
   times[0] = mytimer() - t_begin;  // Total time. All done...
   return(0);
 }
