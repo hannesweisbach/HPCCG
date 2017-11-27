@@ -99,8 +99,6 @@ int HPCCG(HPC_Sparse_Matrix *A, const double *const b, double *const x,
   ddot(nrow, r, r, &rtrans);
   normr = sqrt(rtrans);
 
-  if (rank==0) cout << "Initial Residual = "<< normr << endl;
-
   for(int k=1; k<max_iter && normr > tolerance; k++ )
     {
       if (k == 1)
@@ -115,8 +113,6 @@ int HPCCG(HPC_Sparse_Matrix *A, const double *const b, double *const x,
 	  waxpby (nrow, 1.0, r, beta, p, p);// 2*nrow ops
 	}
       normr = sqrt(rtrans);
-      if (rank==0 && (k%print_freq == 0 || k+1 == max_iter))
-      cout << "Iteration = "<< k << "   Residual = "<< normr << endl;
      
 
 #ifdef USING_MPI
